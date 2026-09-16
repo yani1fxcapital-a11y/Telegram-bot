@@ -1,7 +1,7 @@
 import telebot
 
 # ضع هنا توكن بوتك الخاص
-TOKEN = '8798616483:AAFn-JI8WuVS3yoOhisleCNv8GHGWSvDek'
+TOKEN = '8798616483:AAFn-JI8WuVS3yoOhisIeCNvb8GHGWSvDek'
 
 # معرف قناتك (يجب أن يكون البوت مشرفاً فيها)
 CHANNEL_USERNAME = '@PK1TASKEARNHUB'
