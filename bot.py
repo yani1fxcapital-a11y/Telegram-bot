@@ -3,7 +3,7 @@ import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import telebot
 
-# --- خادم Render الوهمي لمنع خطأ المنافذ ---
+# --- خادم HTTP الوهمي لمنع خطأ المنافذ في Render ---
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -16,9 +16,9 @@ def run_dummy_server():
     server.serve_forever()
 
 threading.Thread(target=run_dummy_server, daemon=True).start()
-# ---------------------------------------------
+# ----------------------------------------------------
 
-TOKEN = '8798616483:AAFn-JI8WuVS3yoOhisIeCNvb8GHGWSvDek'
+TOKEN = '8798616483:AAFn-JI8WuVS3yoOhisIeCNvb8GHGwSVDek'
 CHANNEL_USERNAME = '@PK1TASKEARNHUB'
 ADMIN_ID = 8804323255
 
@@ -41,53 +41,63 @@ def check_subscription(user_id):
 def send_welcome(message):
     user_id = message.from_user.id
     user_name = message.from_user.first_name
-
+    
+    # التحقق من الاشتراك الإجباري في القناة
     if not check_subscription(user_id):
         bot.reply_to(
             message,
-            f"❌ يجب عليك الاشتراك أولاً لتتمكن من استخدام البوت\n"
+            f"❌ لا يمكنك استخدام البوت إلا بعد الاشتراك في قناتنا أولاً:\n"
             f"🔗 {CHANNEL_USERNAME}\n\n"
-            f"بعد الاشتراك، قم بإرسال الأمر /start مجدداً"
+            f"بعد الاشتراك، قم بإرسال الأمر /start مجدداً."
         )
         return
 
+    # حفظ المستخدم إذا لم يكن مسجلاً
     if user_id not in users:
         users[user_id] = {'count': 0}
 
+    # استخراج كود الإحالة (الداعي) من رابط البدء
     args = message.text.split()
-    if len(args) > 1:
-        referrer_id = args[1]
-        if referrer_id.isdigit():
-            referrer_id = int(referrer_id)
-            if referrer_id != user_id and referrer_id in users:
-                if user_id not in referrals:
-                    referrals[user_id] = referrer_id
-                    users[referrer_id]['count'] += 1
+    if len(args) > 1 and args[1].isdigit():
+        referrer_id = int(args[1])
+        
+        # التأكد أن المستخدم لا يحيل نفسه وأنه لم يتم تسجيل إحالته مسبقاً
+        if referrer_id != user_id and user_id not in referrals:
+            referrals[user_id] = referrer_id
+            
+            if referrer_id in users:
+                users[referrer_id]['count'] += 1
+            else:
+                users[referrer_id] = {'count': 1}
 
-                    try:
-                        bot.send_message(
-                            referrer_id,
-                            f"🎉 مبروك! انضم مستخدم جديد عبر رابطك 🔗\n"
-                            f"👤 اسم المدعو: {user_name}\n"
-                            f"📊 إجمالي إحالاتك الناجحة: {users[referrer_id]['count']}"
-                        )
-                    except:
-                        pass
+            # إشعار للداعي بأن شخصاً انضم عبر رابطه
+            try:
+                bot.send_message(
+                    referrer_id,
+                    f"🎉 مبروك! انضم مستخدم جديد عبر رابطك 👤\n"
+                    f"👤 اسم المدعو: {user_name}\n"
+                    f"📊 إجمالي إحالاتك الناجحة: {users[referrer_id]['count']}"
+                )
+            except:
+                pass
 
-                    try:
-                        bot.send_message(
-                            ADMIN_ID,
-                            f"🚨 [تقرير إحالة جديد]\n"
-                            f"👤 الداعي (ID): {referrer_id}\n"
-                            f"👥 المدعو: {user_name} (ID: {user_id})"
-                        )
-                    except Exception as e:
-                        print(f"Failed to send admin report: {e}")
+            # إشعار تفصيلي للمشرف (يظهر فيه الداعي والمدعو لضمان الحقوق)
+            try:
+                bot.send_message(
+                    ADMIN_ID,
+                    f"🚨 [إحالة جديدة ناجحة]\n"
+                    f"👤 الداعي (ID): `{referrer_id}`\n"
+                    f"👥 المدعو: {user_name} (`{user_id}`)\n"
+                    f"📈 إجمالي إحالات الداعي: {users[referrer_id]['count']}"
+                )
+            except Exception as e:
+                print(f"Failed to send admin notification: {e}")
 
+    # إنشاء رابط الإحالة الخاص بالمستخدم الحالي
     ref_link = f"https://t.me/PK_Task_New_bot?start={user_id}"
-
+    
     welcome_text = (
-        f"Welcome to the Referral Bot! 🇵🇰 💰\n\n"
+        f"Welcome to the Referral Bot! 🇵🇰💰\n\n"
         f"Your Referral Link:\n{ref_link}\n\n"
         f"Share this link with your friends to earn referrals!"
     )
@@ -107,9 +117,9 @@ def show_stats(message):
 def send_menu(message):
     menu_text = (
         f"🤖 **قائمة البوت الرئيسية**\n\n"
-        f"• /start - بدء استخدام البوت وتسجيل الدخول\n"
+        f"• /start - بدء استخدام البوت والتسجيل\n"
         f"• /menu - عرض قائمة الأوامر المتاحة\n"
-        f"• للحصول على رابط الإحالة الخاص بك، استخدم الأمر /start"
+        f"• /stats - معرفة عدد إحالاتك"
     )
     bot.reply_to(message, menu_text, parse_mode="Markdown")
 
