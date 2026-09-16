@@ -96,6 +96,16 @@ def show_stats(message):
     user_id = message.from_user.id
     count = users.get(user_id, {}).get('count', 0)
     bot.reply_to(message, f"📊 Your Referral Stats:\n\nTotal successful referrals: {count}")
-
+# تعيين قائمة الأوامر التي تظهر للمستخدمين في زر Menu
+@bot.message_handler(commands=['menu', 'help'])
+def send_menu(message):
+    menu_text = (
+        "🤖 **قائمة أওয়াْمِر البوت الرئيسية:**\n\n"
+        "▫️ /start - بدء استخدام البوت وتسجيل الدخول\n"
+        "▫️ /menu - عرض قائمة الأوامر المتاحة\n"
+        "▫️ للحصول على رابط الإحالة الخاص بك، استخدم الأزرار داخل البوت."
+    )
+    bot.reply_to(message, menu_text, parse_mode="Markdown")
+    
 print("Bot is running with full features...")
 bot.infinity_polling()
