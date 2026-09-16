@@ -1,9 +1,9 @@
-import os
+  import os
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import telebot
 
-# --- خادم HTTP الوهمي لمنع خطأ المنافذ في Render ---
+# --- خادم HTTP الوهمي لإبقاء الخدمة نشطة على Render ---
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -18,7 +18,8 @@ def run_dummy_server():
 threading.Thread(target=run_dummy_server, daemon=True).start()
 # ----------------------------------------------------
 
-TOKEN = '8798616483:AAFn-JI8WuVS3yoOhisIeCNvb8GHGWSvDek'
+# ضع التوكن الصحيح الخاص بك هنا
+TOKEN = '8798616483:AAEFanIBQDxbxlO9TZ5rpOByLumX8HInL1o'
 CHANNEL_USERNAME = '@PK1TASKEARNHUB'
 ADMIN_ID = 8804323255
 
@@ -42,7 +43,6 @@ def send_welcome(message):
     user_id = message.from_user.id
     user_name = message.from_user.first_name
     
-    # التحقق من الاشتراك الإجباري في القناة
     if not check_subscription(user_id):
         bot.reply_to(
             message,
@@ -52,16 +52,13 @@ def send_welcome(message):
         )
         return
 
-    # حفظ المستخدم إذا لم يكن مسجلاً
     if user_id not in users:
         users[user_id] = {'count': 0}
 
-    # استخراج كود الإحالة (الداعي) من رابط البدء
     args = message.text.split()
     if len(args) > 1 and args[1].isdigit():
         referrer_id = int(args[1])
         
-        # التأكد أن المستخدم لا يحيل نفسه وأنه لم يتم تسجيل إحالته مسبقاً
         if referrer_id != user_id and user_id not in referrals:
             referrals[user_id] = referrer_id
             
@@ -70,7 +67,6 @@ def send_welcome(message):
             else:
                 users[referrer_id] = {'count': 1}
 
-            # إشعار للداعي بأن شخصاً انضم عبر رابطه
             try:
                 bot.send_message(
                     referrer_id,
@@ -81,7 +77,6 @@ def send_welcome(message):
             except:
                 pass
 
-            # إشعار تفصيلي للمشرف (يظهر فيه الداعي والمدعو لضمان الحقوق)
             try:
                 bot.send_message(
                     ADMIN_ID,
@@ -93,7 +88,6 @@ def send_welcome(message):
             except Exception as e:
                 print(f"Failed to send admin notification: {e}")
 
-    # إنشاء رابط الإحالة الخاص بالمستخدم الحالي
     ref_link = f"https://t.me/PK_Task_New_bot?start={user_id}"
     
     welcome_text = (
@@ -123,5 +117,6 @@ def send_menu(message):
     )
     bot.reply_to(message, menu_text, parse_mode="Markdown")
 
-print("Bot is running with full features...")
-bot.infinity_polling()
+print("Bot is running stably...")
+# استخدام الطريقة التقليدية الآمنة بعد إيقاف أي تكرار سابق
+bot.infinity_polling(skip_pending=True)
